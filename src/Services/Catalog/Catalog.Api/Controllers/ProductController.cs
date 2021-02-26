@@ -20,6 +20,8 @@ namespace Catalog.Api.Controllers
         private readonly ILogger<ProductController> _logger;
         private readonly IProductQueryService _productQueryService;
         private readonly IMediator _mediator;
+
+
         public ProductController(ILogger<ProductController> logger,
             IProductQueryService productQueryService,
             IMediator mediator
