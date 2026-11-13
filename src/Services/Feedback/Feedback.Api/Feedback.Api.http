@@ -1,0 +1,25 @@
+@Feedback.Api_HostAddress = http://localhost:5111
+
+### POST-1 valid -> 200, id 1
+POST {{Feedback.Api_HostAddress}}/api/feedback
+Content-Type: application/json
+
+{"message":"Great","rating":5}
+
+### POST-1 empty message -> 400
+POST {{Feedback.Api_HostAddress}}/api/feedback
+Content-Type: application/json
+
+{"message":"","rating":3}
+
+### POST-1 rating out of range -> 400
+POST {{Feedback.Api_HostAddress}}/api/feedback
+Content-Type: application/json
+
+{"message":"Ok","rating":9}
+
+### POST-1 wrong content type -> 415
+POST {{Feedback.Api_HostAddress}}/api/feedback
+Content-Type: text/plain
+
+not json

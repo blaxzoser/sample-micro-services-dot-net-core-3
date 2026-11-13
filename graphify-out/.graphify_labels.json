@@ -1,1 +1,16 @@
-{"0": "Catalog Service Namespaces", "1": "Controller Cheat Sheet Concepts", "2": "Catalog API Controllers", "3": "EF Core Persistence & Product", "4": "Syslog Logging Provider", "5": "MediatR Commands & Enums", "6": "Launch Settings", "7": "Solution Folder Layout", "8": "EF Core Migrations", "9": "Host Startup & Pipeline", "10": "Api & Logging Packages", "11": "Paging & Collection Packages", "12": "Domain & Persistence Packages", "13": "Common & Handlers Packages", "14": "Queries & Mapping Packages", "15": "ETag & Concurrency Exercises", "16": "DTO Mapping Extension", "17": "API Versioning", "18": "Order State Machine Exercise"}
+{
+  "0": "Catalog Service Namespaces",
+  "1": "Controller Cheat Sheet Concepts",
+  "4": "Syslog Logging Provider",
+  "6": "Launch Settings",
+  "7": "Solution Folder Layout",
+  "9": "Host Startup & Pipeline",
+  "10": "Api & Logging Packages",
+  "11": "Paging & Collection Packages",
+  "12": "Domain & Persistence Packages",
+  "13": "Common & Handlers Packages",
+  "14": "Queries & Mapping Packages",
+  "15": "ETag & Concurrency Exercises",
+  "17": "API Versioning",
+  "18": "Order State Machine Exercise"
+}

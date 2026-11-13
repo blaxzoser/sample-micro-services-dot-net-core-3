@@ -1,0 +1,20 @@
+{
+  "2": "Task",
+  "3": "Product",
+  "5": "ProductInStockUpdateItem",
+  "8": "microsoft_entityframeworkcore",
+  "19": ".GetById",
+  "20": "http",
+  "21": "Entities.cs",
+  "22": "Customer.Api.csproj",
+  "23": "http",
+  "24": "AppDbContext",
+  "25": "CLAUDE.md",
+  "26": "ProductInStockUpdateCommnand",
+  "27": "Feedback.Api.Tests",
+  "28": "AppDbContext",
+  "29": "Product",
+  "30": "ApplicationDbContext",
+  "31": "Feedback.Api",
+  "32": "Feedback.Api/Program.cs"
+}

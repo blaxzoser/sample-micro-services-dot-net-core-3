@@ -33,6 +33,9 @@ Timed exercises in the style of Codility and HackerRank. **Each exercise is one 
 | GET-3 | Pagination | 🟡 | 20 | 200, 400 + header | ☐ |
 | GET-4 | Nested resource | 🟡 | 20 | 200, 400, 404 | ☐ |
 | GET-5 | Conditional GET (ETag) | 🔴 | 25 | 200, 304 | ☐ |
+| GET-6 | Customers over 30 + payment count | 🟡 | 20 | 200 (empty list) | ☐ |
+| GET-7 | Order summary by age range | 🟡 | 25 | 200, 400 | ☐ |
+| GET-8 | Customer activity (orders + payments) | 🟢 | 15 | 200 (empty list) | ☐ |
 | PUT-1 | Replace product | 🟢 | 15 | 204, 400, 404 | ☐ |
 | PUT-2 | Replace user (id mismatch) | 🟢 | 15 | 200, 400, 404 | ☐ |
 | PUT-3 | Upsert setting | 🟡 | 20 | 201, 204, 400 | ☐ |
@@ -108,6 +111,7 @@ public class Customer
     public int Id { get; set; }
     public string Name { get; set; } = "";
     public decimal Balance { get; set; }
+    public DateTime Birthday { get; set; }     // GET-6
 }
 
 public enum OrderStatus { Pending, Paid, Shipped, Delivered, Cancelled }
@@ -153,9 +157,9 @@ public class Db
 
     public List<Customer> Customers { get; } = new()
     {
-        new() { Id = 1, Name = "Ana",  Balance = 500m },
-        new() { Id = 2, Name = "Luis", Balance = 20m },
-        new() { Id = 3, Name = "Eva",  Balance = 0m },      // has no orders
+        new() { Id = 1, Name = "Ana",  Balance = 500m, Birthday = new DateTime(1987, 1, 13) },
+        new() { Id = 2, Name = "Luis", Balance = 20m,  Birthday = new DateTime(2000, 6, 15) },
+        new() { Id = 3, Name = "Eva",  Balance = 0m,   Birthday = new DateTime(1980, 3, 2) },  // has no orders
     };
 
     public List<Order> Orders { get; } = new()
@@ -879,6 +883,289 @@ public IActionResult GetById(int id)
 }
 ```
 Production version: parse `Request.GetTypedHeaders().IfNoneMatch`, which handles lists like `"1", "2"` and weak tags.
+</details>
+
+---
+
+## GET-6 · Customers over 30 with their payment count → 200 🟡 20 min
+
+**Scenario:** Marketing wants a list of customers older than 30 and how many payments each has made.
+
+**Endpoint:** `GET /api/customers/over-30`
+
+**Setup (this exercise only):** the starter kit has no payments. Seed these in `Db.Payments` for this exercise. POST-5's test cases assume the list starts empty, so take them out again before you do POST-5.
+```csharp
+public List<Payment> Payments { get; } = new()
+{
+    new() { Id = 1, CustomerId = 1, Amount = 100m },
+    new() { Id = 2, CustomerId = 1, Amount = 50m },
+    new() { Id = 3, CustomerId = 1, Amount = 70m },
+    new() { Id = 4, CustomerId = 2, Amount = 100m },
+};
+```
+
+**Requirements**
+- Only customers whose **age** is more than 30, so 31 or older. Work out age from `Birthday` and today's date in whole years: someone who is 30 years and 11 months old is 30.
+- Body: a list of `{ customerName, age, totalPayments }`, ordered by `customerName`. Use a DTO; don't return the entity.
+- `totalPayments` is the **number** of payments. A customer with no payments still appears, with `0`.
+- No customer matches → **200 `[]`**.
+
+**Test cases** (ages as of 2026-11-12; they go up on each birthday)
+| Request | Expected |
+|---|---|
+| `GET /api/customers/over-30` | 200, 2 items |
+| item 1 | `{ customerName: "Ana", age: 39, totalPayments: 3 }` |
+| item 2 | `{ customerName: "Eva", age: 46, totalPayments: 0 }` |
+| check the list | no `Luis` (age 26) |
+| check any item | has no `id`, `balance` or `birthday` properties |
+
+**Follow-ups:** Why is `today.Year - birthday.Year` alone wrong? Why filter with `Birthday <= today.AddYears(-31)` instead of computing age in the `Where`? (A plain comparison against a constant can use an index; a calculation on the column can't.) Inner join + group by vs a correlated `Count`: which one drops Eva? How would you make the test cases stop depending on today's date? (Inject `TimeProvider` and use `FakeTimeProvider` in tests.)
+
+<details>
+<summary>✅ Solution</summary>
+
+```csharp
+public record CustomerPaymentsSummaryDto(string CustomerName, int Age, int TotalPayments);
+
+[HttpGet("over-30")]
+[ProducesResponseType<IEnumerable<CustomerPaymentsSummaryDto>>(StatusCodes.Status200OK)]
+public ActionResult<IEnumerable<CustomerPaymentsSummaryDto>> GetOver30()
+{
+    var today = DateTime.Today;
+    var cutoff = today.AddYears(-31);          // born on or before this date => 31 or older
+
+    var result = _db.Customers
+        .Where(c => c.Birthday <= cutoff)
+        .OrderBy(c => c.Name)
+        .Select(c => new CustomerPaymentsSummaryDto(
+            c.Name,
+            AgeOn(c.Birthday, today),
+            _db.Payments.Count(p => p.CustomerId == c.Id)))   // 0 when there are none
+        .ToList();
+
+    return Ok(result);
+}
+
+private static int AgeOn(DateTime birthday, DateTime today)
+{
+    var age = today.Year - birthday.Year;
+    if (birthday.Date > today.AddYears(-age)) age--;     // birthday hasn't happened yet this year
+    return age;
+}
+```
+**With EF Core** (`src/Services/Customer/Customer.Api`): EF can't translate `AgeOn` to SQL. In the final `Select`, EF runs it in C# after the query, so the code above still works with `await ...ToListAsync(ct)`. The same call inside a `Where` would throw, which is one more reason to filter on `cutoff`. The project's version is easier to follow: it selects `Name`, `Birthday` and the count, then calculates the age in a second step. EF turns the `Count` into a correlated `SELECT COUNT(*)` subquery, so Eva still appears.
+</details>
+
+---
+
+## GET-7 · Order summary for an age range → 200 / 400 🟡 25 min
+
+**Scenario:** Sales wants to compare customer groups by age: how many orders each customer placed and how much money was actually collected from them.
+
+**Endpoint:** `GET /api/customers/order-summary?minAge=25&maxAge=40`
+
+**Same skills as GET-6:** start from the parent (customers), keep the ones with no children (zeros), filter on dates instead of calculating age in SQL, and calculate age in C#. **New in GET-7:** a range filter, query-string validation, two aggregates (a count and a conditional sum), and sorting on a calculated value.
+
+Uses the starter-kit seed as it is: Ana has 3 orders (Pending 100, Paid 50, Delivered 70), Luis has 1 (Pending 100), and Eva has none.
+
+**Requirements**
+- `minAge` and `maxAge` are optional query parameters, defaulting to `18` and `120`. Each must be from 0 to 150, and `minAge` can't be greater than `maxAge`. Otherwise → **400** ValidationProblemDetails.
+- Age range is **inclusive**: `minAge=39&maxAge=39` includes someone who is 39.
+- Body: a list of `{ customerName, age, totalOrders, totalSpent }`.
+  - `totalOrders` = number of orders, **any** status.
+  - `totalSpent` = sum of `Total` for orders that are **`Paid` or `Delivered`** (money collected). `Pending` and `Cancelled` don't count.
+  - A customer with no orders appears with `0` and `0`.
+- Order by `totalSpent` **descending**, then `customerName` ascending, so ties come out in a stable order.
+- No customer in range → **200 `[]`**.
+
+**Test cases** (ages as of 2026-11-12: Ana 39, Luis 26, Eva 46; valid until Ana's birthday on 2027-01-13)
+| Request | Expected |
+|---|---|
+| `?minAge=25&maxAge=40` | 200: Ana `{age: 39, totalOrders: 3, totalSpent: 120}`, then Luis `{26, 1, 0}` |
+| no parameters | 200: Ana (120), Eva (0), Luis (0). Eva comes before Luis because the 0s tie and E < L |
+| `?minAge=40&maxAge=50` | 200: Eva `{age: 46, totalOrders: 0, totalSpent: 0}` |
+| `?minAge=39&maxAge=39` | 200: Ana only (the range is inclusive) |
+| `?minAge=27&maxAge=38` | 200, `[]` |
+| `?minAge=50` | 200, `[]` |
+| `?minAge=40&maxAge=30` | 400, error on `minAge` |
+| `?minAge=-1` | 400 |
+| `?maxAge=abc` | 400 |
+
+**Hints** (open only if you're stuck)
+<details>
+<summary>💡 Turning an age range into a date range</summary>
+
+- age ≥ `minAge` ⇔ born **on or before** `today.AddYears(-minAge)`
+- age ≤ `maxAge` ⇔ age < `maxAge + 1` ⇔ born **after** `today.AddYears(-(maxAge + 1))`
+
+So: `c.Birthday <= bornOnOrBefore && c.Birthday > bornAfter`. Check it with `minAge=maxAge=39`: Ana, born 1987-01-13, has to be inside the range.
+</details>
+
+**Follow-ups:**
+1. Why does `totalSpent` need `0` and not `null` for Eva? In plain SQL, what does `SUM` return over zero rows? (`NULL`. EF adds `COALESCE(SUM(...), 0)` for you.)
+2. Write the same query as a `LEFT JOIN` + `GROUP BY`. What do you `COUNT`, so Eva gets 0 and not 1?
+3. Look at the SQL EF generates for the subquery version: the `SUM` subquery appears **twice**, once in `SELECT` and again in `ORDER BY`. With a million orders, which version would you choose, and why?
+4. Why is the `minAge > maxAge` check written in the action and not with `[Range]`? (`[Range]` checks one value; comparing two parameters needs code or `IValidatableObject` on a query object.)
+5. Why does `ThenBy(name)` matter for hidden tests?
+
+<details>
+<summary>✅ Solution (subqueries, same approach as GET-6)</summary>
+
+```csharp
+public record CustomerOrderSummaryDto(string CustomerName, int Age, int TotalOrders, decimal TotalSpent);
+
+[HttpGet("order-summary")]
+[ProducesResponseType<List<CustomerOrderSummaryDto>>(StatusCodes.Status200OK)]
+[ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+public async Task<ActionResult<List<CustomerOrderSummaryDto>>> GetOrderSummary(
+    [FromQuery, Range(0, 150)] int minAge = 18,
+    [FromQuery, Range(0, 150)] int maxAge = 120,
+    CancellationToken ct = default)
+{
+    if (minAge > maxAge)
+    {
+        ModelState.AddModelError(nameof(minAge), "minAge must be less than or equal to maxAge.");
+        return ValidationProblem(ModelState);                 // 400 ValidationProblemDetails
+    }
+
+    var today = DateTime.Today;
+    var bornOnOrBefore = today.AddYears(-minAge);             // age >= minAge
+    var bornAfter = today.AddYears(-(maxAge + 1));            // age <= maxAge
+
+    var rows = await _db.Customers
+        .AsNoTracking()
+        .Where(c => c.Birthday <= bornOnOrBefore && c.Birthday > bornAfter)
+        .Select(c => new
+        {
+            c.Name,
+            c.Birthday,
+            TotalOrders = _db.Orders.Count(o => o.CustomerId == c.Id),
+            TotalSpent = _db.Orders
+                .Where(o => o.CustomerId == c.Id &&
+                            (o.Status == OrderStatus.Paid || o.Status == OrderStatus.Delivered))
+                .Sum(o => o.Total)                            // EF: COALESCE(SUM(...), 0.0)
+        })
+        .OrderByDescending(x => x.TotalSpent)
+        .ThenBy(x => x.Name)
+        .ToListAsync(ct);
+
+    return rows
+        .Select(r => new CustomerOrderSummaryDto(r.Name, AgeOn(r.Birthday, today), r.TotalOrders, r.TotalSpent))
+        .ToList();
+}
+```
+`AgeOn` is the same helper as in GET-6.
+</details>
+
+<details>
+<summary>✅ Alternative: LEFT JOIN + GROUP BY (one pass over Orders)</summary>
+
+Only the query changes; the validation and the date range stay the same.
+```csharp
+var rows = await (
+        from c in _db.Customers
+        where c.Birthday <= bornOnOrBefore && c.Birthday > bornAfter
+        join o in _db.Orders on c.Id equals o.CustomerId into customerOrders
+        from o in customerOrders.DefaultIfEmpty()             // LEFT JOIN: keeps Eva
+        group o by new { c.Id, c.Name, c.Birthday } into g
+        select new
+        {
+            g.Key.Name,
+            g.Key.Birthday,
+            TotalOrders = g.Count(o => o != null),            // not g.Count(): Eva's NULL row would count as 1
+            TotalSpent = g.Sum(o => o != null &&
+                                    (o.Status == OrderStatus.Paid || o.Status == OrderStatus.Delivered)
+                                    ? o.Total : 0m)
+        })
+    .OrderByDescending(x => x.TotalSpent)
+    .ThenBy(x => x.Name)
+    .AsNoTracking()
+    .ToListAsync(ct);
+```
+SQL that EF Core 9 generates (shortened):
+```sql
+SELECT c.Name, c.Birthday,
+       COUNT(CASE WHEN o.Id IS NOT NULL THEN 1 END)                                         AS TotalOrders,
+       COALESCE(SUM(CASE WHEN o.Id IS NOT NULL AND o.Status IN ('Paid','Delivered') THEN o.Total ELSE 0.0 END), 0.0) AS TotalSpent
+FROM Customers c
+LEFT JOIN Orders o ON c.Id = o.CustomerId
+WHERE c.Birthday <= @bornOnOrBefore AND c.Birthday > @bornAfter
+GROUP BY c.Id, c.Name, c.Birthday
+ORDER BY TotalSpent DESC, c.Name
+```
+This is **conditional aggregation**: `SUM(CASE WHEN ...)` works out several totals in one pass over the join. With two or more aggregates per parent, it's usually a better choice than one subquery per aggregate.
+</details>
+
+---
+
+## GET-8 · Customer activity: orders + payments → 200 🟢 15 min
+
+**Scenario:** The account team wants one line per customer, aged 30 or over, showing their orders and payments.
+
+**Endpoint:** `GET /api/customers/activity` (no query parameters, no validation)
+
+**Same skills as GET-6 and GET-7:** start from customers, keep customers with no orders or payments, filter on a birthday cutoff, calculate age in C#, sort with a tiebreaker, and return 200 `[]` when nothing matches. **New in GET-8:** counting from **two** child tables at once, and an **inclusive** age limit.
+
+**Setup:** needs the payments from GET-6's setup. `Customer.Api` already seeds them.
+
+**Requirements**
+- Customers **30 or older**. This includes someone who is exactly 30, unlike GET-6's "older than 30".
+- Body: a list of `{ customerName, age, totalOrders, totalPayments, amountPaid }`.
+  - `totalOrders` = number of orders, any status.
+  - `totalPayments` = number of payments. `amountPaid` = sum of their `Amount`.
+  - A customer with nothing appears with `0`, `0`, `0`.
+- Order by `amountPaid` descending, then `customerName`.
+- No customer matches → **200 `[]`**.
+
+**Test cases** (ages as of 2026-11-12; valid until 2027-01-13)
+| Request | Expected |
+|---|---|
+| `GET /api/customers/activity` | 200, 2 items |
+| item 1 | `{ customerName: "Ana", age: 39, totalOrders: 3, totalPayments: 3, amountPaid: 220 }` |
+| item 2 | `{ customerName: "Eva", age: 46, totalOrders: 0, totalPayments: 0, amountPaid: 0 }` |
+| check the list | no `Luis` (26) |
+| check Ana | `totalOrders` is **3**, not 9, and `amountPaid` is **220**, not 660 |
+
+**Follow-ups:**
+1. GET-6 used `today.AddYears(-31)` for "older than 30". What's the cutoff for "30 or older", and why does it change by one?
+2. The last test case: if you `LEFT JOIN` Orders **and** Payments and then `GROUP BY` the customer, Ana gets `totalOrders: 9`, `totalPayments: 9`, `amountPaid: 660`. Why? (Each of her 3 orders is paired with each of her 3 payments: 3 × 3 = 9 rows. This is the **fan-out** trap.)
+3. Does `COUNT(DISTINCT o.Id)` fix the fan-out? (It fixes the counts but **not** `SUM(p.Amount)`. To fix the sum, total each child table separately, with a subquery or a derived table, before you join.)
+
+<details>
+<summary>✅ Solution</summary>
+
+```csharp
+public record CustomerActivityDto(string CustomerName, int Age, int TotalOrders, int TotalPayments, decimal AmountPaid);
+
+[HttpGet("activity")]
+[ProducesResponseType<List<CustomerActivityDto>>(StatusCodes.Status200OK)]
+public async Task<ActionResult<List<CustomerActivityDto>>> GetActivity(CancellationToken ct)
+{
+    var today = DateTime.Today;
+    var cutoff = today.AddYears(-30);                     // born on or before => 30 or older
+
+    var rows = await _db.Customers
+        .AsNoTracking()
+        .Where(c => c.Birthday <= cutoff)
+        .Select(c => new
+        {
+            c.Name,
+            c.Birthday,
+            // One subquery per child table: each one counts only its own rows, so there's no fan-out.
+            TotalOrders   = _db.Orders.Count(o => o.CustomerId == c.Id),
+            TotalPayments = _db.Payments.Count(p => p.CustomerId == c.Id),
+            AmountPaid    = _db.Payments.Where(p => p.CustomerId == c.Id).Sum(p => p.Amount)
+        })
+        .OrderByDescending(x => x.AmountPaid)
+        .ThenBy(x => x.Name)
+        .ToListAsync(ct);
+
+    return rows
+        .Select(r => new CustomerActivityDto(r.Name, AgeOn(r.Birthday, today), r.TotalOrders, r.TotalPayments, r.AmountPaid))
+        .ToList();
+}
+```
+`AgeOn` is the same helper as in GET-6. Here the subqueries are the **right** tool, not just the easy one. A single `GROUP BY` over two joined child tables gives wrong numbers. I checked this against the database, and it returned 9 / 9 / 660 for Ana.
 </details>
 
 ---

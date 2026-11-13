@@ -1,0 +1,50 @@
+@host = http://localhost:5173
+
+### Customer by id -> 200, name "Ana"
+GET {{host}}/api/customers/1
+Accept: application/json
+
+### Unknown customer -> 404 ProblemDetails
+GET {{host}}/api/customers/999
+Accept: application/json
+
+### Non-numeric id -> 404 (route constraint)
+GET {{host}}/api/customers/abc
+Accept: application/json
+
+### GET-6: customers older than 30 + payment count -> 200, Ana (3 payments) and Eva (0); Luis excluded
+GET {{host}}/api/customers/over-30
+Accept: application/json
+
+### GET-7: 200, Ana {39, 3, 120} then Luis {26, 1, 0}
+GET {{host}}/api/customers/order-summary?minAge=25&maxAge=40
+
+### GET-7: no params -> 200, Ana, Eva, Luis (ties on 0 sorted by name)
+GET {{host}}/api/customers/order-summary
+
+### GET-7: 200, Eva {46, 0, 0}
+GET {{host}}/api/customers/order-summary?minAge=40&maxAge=50
+
+### GET-7: inclusive range -> 200, Ana only
+GET {{host}}/api/customers/order-summary?minAge=39&maxAge=39
+
+### GET-7: 200, []
+GET {{host}}/api/customers/order-summary?minAge=27&maxAge=38
+
+### GET-7: minAge > maxAge -> 400
+GET {{host}}/api/customers/order-summary?minAge=40&maxAge=30
+
+### GET-7: out of range -> 400
+GET {{host}}/api/customers/order-summary?minAge=-1
+
+### GET-7: not a number -> 400
+GET {{host}}/api/customers/order-summary?maxAge=abc
+
+### GET-8: 200, Ana {39, 3 orders, 3 payments, 220} then Eva {46, 0, 0, 0}; no Luis
+GET {{host}}/api/customers/activity
+
+### Todos sample
+GET {{host}}/todos/
+Accept: application/json
+
+###
