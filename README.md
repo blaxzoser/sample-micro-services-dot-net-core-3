@@ -213,7 +213,7 @@ These study guides live in the [`doc/`](doc) folder:
 | Document | Description |
 |---|---|
 | [ASP.NET Controller Cheat Sheet](doc/aspnet-controller-cheatsheet.md) | HTTP verbs, status codes, routing, `ControllerBase` helpers, ProblemDetails, and notes on this codebase |
-| [Mock Interview Exercises](doc/aspnet-mock-interview-exercises.md) | 26 timed exercises (15–30 min) for POST, GET, PUT, PATCH, and DELETE, with test cases and solutions |
+| [Mock Interview Exercises](doc/aspnet-mock-interview-exercises.md) | 30 timed exercises (15–30 min) for POST, GET, PUT, PATCH, and DELETE, with test cases and solutions |
 
 ---
 

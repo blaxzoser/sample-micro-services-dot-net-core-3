@@ -1,0 +1,42 @@
+@host = http://localhost:5113
+
+### GET-2 · list / filter by category
+GET {{host}}/api/products?category=Electronics
+Accept: application/json
+
+### GET-1 · product by id
+GET {{host}}/api/products/1
+Accept: application/json
+
+### POST-2 · create product -> 201 + Location
+POST {{host}}/api/products
+Content-Type: application/json
+
+{ "name": "Chair", "sku": "CHR-001", "category": "Furniture", "price": 80, "stock": 3 }
+
+### POST-3 · duplicate SKU -> 409
+POST {{host}}/api/products
+Content-Type: application/json
+
+{ "name": "Laptop 2", "sku": "LAP-001", "category": "Electronics", "price": 900, "stock": 1 }
+
+### PUT-1 · replace product -> 204
+PUT {{host}}/api/products/1
+Content-Type: application/json
+
+{ "name": "Laptop", "sku": "LAP-001", "category": "Electronics", "price": 999, "stock": 10 }
+
+### PUT-4 · update price -> 204 / 422
+PUT {{host}}/api/products/1/price
+Content-Type: application/json
+
+{ "price": 1500 }
+
+### PATCH-5 · adjust stock -> 200 / 409
+PATCH {{host}}/api/products/3/stock
+Content-Type: application/json
+
+{ "delta": -2 }
+
+### DELETE-1 · delete product -> 204
+DELETE {{host}}/api/products/2

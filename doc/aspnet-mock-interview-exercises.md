@@ -28,6 +28,7 @@ Timed exercises in the style of Codility and HackerRank. **Each exercise is one 
 | POST-4 | Pay an order | 🟡 | 20 | 200, 402, 404, 409 | ☐ |
 | POST-5 | Idempotent payment | 🔴 | 30 | 201, 400, 422 | ☐ |
 | POST-6 | Async report job | 🔴 | 25 | 202, 200, 404 | ☐ |
+| POST-7 | In-memory create (NextId + lock) | 🟡 | 20 | 201, 400, 404 | ☐ |
 | GET-1 | Product by id | 🟢 | 15 | 200, 404 | ☐ |
 | GET-2 | Filter by category | 🟢 | 15 | 200 (empty list) | ☐ |
 | GET-3 | Pagination | 🟡 | 20 | 200, 400 + header | ☐ |
@@ -640,6 +641,111 @@ public class ReportsController : ControllerBase
     }
 }
 ```
+</details>
+
+---
+
+## POST-7 · In-memory create: `NextId` + `lock` → 201 / 400 / 404 🟡 20 min
+
+**Scenario:** The same "create product" as POST-2, but the interviewer gives you **no database**: products live in a `List<Product>` inside a singleton. A list has no identity column and is not thread-safe, so you must generate the id yourself and make the endpoint safe when many requests arrive at the same time.
+
+**Endpoints:** `POST /api/memory/products`, `GET /api/memory/products/{id}`, `GET /api/memory/products`
+
+**Starter (already in `src/Services/Products/Products.Api`)**
+- `Data/InMemoryProductStore.cs`: the list with the three seed products. Registered with `AddSingleton` in `Program.cs`.
+- `Controllers/MemoryProductsController.cs`: empty, with the store injected.
+- Reuse `ProductDto` for the body and its validation (same rules as POST-2).
+
+**Requirements**
+- Add to the store a lock object (`Sync`) and `NextId()`: **1** for an empty list, otherwise **highest id + 1**.
+- `POST` → **201 Created**, `Location: /api/memory/products/{id}`, and the product in the body. The first new id is **4**.
+- "Compute the id" and "add to the list" must be **one atomic step**: 500 simultaneous requests get 500 different ids, with no gaps and no lost products.
+- `GET {id}` → **200** or **404**. `GET` (no id) → **200** with every product.
+- Invalid input → **400**, and the rejected request must not use up an id.
+- SKUs do not need to be unique here (that is POST-3).
+
+**Test cases**
+| Request | Expected |
+|---|---|
+| POST a valid product | 201, `id: 4`, `Location` ends with `/api/memory/products/4` |
+| POST three times | ids `4`, `5`, `6` |
+| GET the Location URL | 200, `name: "Chair"` |
+| GET `/api/memory/products/999` | 404 |
+| GET `/api/memory/products` | 200, 3 items (4 after one POST) |
+| POST `price: 0`, then a valid POST | 400, then 201 with `id: 4` |
+| 500 POSTs at the same time | all 201, ids are exactly `4`–`503`, GET returns 503 items |
+
+**Run the tests** (no SQL Server needed; each test starts a fresh copy of the app):
+```bash
+dotnet test src/Services/Products/Products.Api.Tests --filter "Exercise=POST-7"
+```
+
+**Follow-ups:** Why does the lock have to cover *both* lines and not only `Add`? Why is the store a singleton, and what breaks if it is scoped? Why not `lock (this)` or `lock (_store.Products)`? What does `NextId` return after you delete the product with the highest id, and is reusing that id a problem? What replaces the lock when the app runs on two servers?
+
+<details>
+<summary>✅ Solution</summary>
+
+```csharp
+public class InMemoryProductStore
+{
+    public readonly object Sync = new();      // one private-purpose object, used only for locking
+
+    public List<Product> Products { get; } = new() { /* seed */ };
+
+    // Call this only while holding Sync.
+    public int NextId() => Products.Count == 0 ? 1 : Products.Max(p => p.Id) + 1;
+}
+
+[ApiController]
+[Route("api/memory/products")]
+public class MemoryProductsController : ControllerBase
+{
+    private readonly InMemoryProductStore _store;
+    public MemoryProductsController(InMemoryProductStore store) => _store = store;
+
+    [HttpGet]
+    public ActionResult<List<Product>> GetAll()
+    {
+        lock (_store.Sync) return _store.Products.ToList();   // copy inside the lock
+    }
+
+    [HttpGet("{id:int}")]
+    public ActionResult<Product> GetById(int id)
+    {
+        Product? product;
+        lock (_store.Sync) product = _store.Products.FirstOrDefault(p => p.Id == id);
+        return product is null ? NotFound() : product;
+    }
+
+    [HttpPost]
+    public ActionResult<Product> Create(ProductDto request)
+    {
+        var product = new Product
+        {
+            Name = request.Name, Sku = request.Sku, Category = request.Category,
+            Price = request.Price, Stock = request.Stock
+        };
+
+        lock (_store.Sync)                    // read-highest-id + add = one atomic step
+        {
+            product.Id = _store.NextId();
+            _store.Products.Add(product);
+        }
+
+        return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
+    }
+}
+```
+
+Key points:
+- **The race:** without the lock, requests A and B both read "highest id = 3", both compute 4, and both add a product with id 4. This is a *check-then-act* bug; locking only `Add` does not fix it, because the read happens outside.
+- **`List<T>` is not thread-safe:** two `Add` calls at once can lose an item or throw. Reads that run during an `Add` (`Max`, `FirstOrDefault`, `ToList`) can throw "Collection was modified", so the GETs take the same lock.
+- **Singleton:** the lock only works because every request shares the same store, and therefore the same `Sync` object. A scoped store would give each request its own empty list and its own lock.
+- **Lock a dedicated object**, not `this` or the list: other code could lock those too and cause a deadlock.
+- **Keep the lock short** and never `await` inside it (the compiler forbids it). Build the `Product` and the response outside.
+- **Validation runs before the action**, so a 400 never reaches `NextId` and never uses up an id.
+- **`Max + 1` reuses ids** after the highest product is deleted. A counter with `Interlocked.Increment(ref _lastId)` never reuses one, and gives a unique id without a lock, but the list still needs the lock.
+- **One process only:** with two servers each has its own list and its own lock. Then the database does this job (identity column, unique index), which is why the POST-2 EF Core version needs neither `NextId` nor `lock`.
 </details>
 
 ---
