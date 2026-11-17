@@ -12,6 +12,9 @@ namespace Products.Api.Data;
 //   2) NextId(), which returns 1 for an empty list, or the highest id + 1
 public class InMemoryProductStore
 {
+
+    public readonly object Sync = new();
+
     // Same seed data as AppDbContext, so the next new id is 4.
     public List<Product> Products { get; } = new()
     {
@@ -19,4 +22,6 @@ public class InMemoryProductStore
         new() { Id = 2, Name = "Mouse",  Sku = "MOU-001", Category = "Electronics", Price = 25m,   Stock = 100 },
         new() { Id = 3, Name = "Desk",   Sku = "DSK-001", Category = "Furniture",   Price = 300m,  Stock = 5 },
     };
+
+    public int NextId() => Products.Count == 0 ? 1 : Products.Max(p => p.Id) + 1;
 }

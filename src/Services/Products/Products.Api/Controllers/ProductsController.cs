@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Products.Api.Dtos;
 
 namespace Products.Api.Controllers;
@@ -19,13 +20,13 @@ public class ProductsController : ControllerBase
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Product>> AddProduct([FromBody] ProductDto product)
     {
-        var newProduct = new Product() 
+        var newProduct = new Product()
         {
             Name = product.Name,
             Category = product.Category,
             Price = product.Price,
             Sku = product.Sku,
-            Stock = product.Stock            
+            Stock = product.Stock
         };
 
         await _db.Products.AddAsync(newProduct);
@@ -37,7 +38,7 @@ public class ProductsController : ControllerBase
         // return CreatedAtAction(nameof(newProduct.Id), new { id = newProduct.Id }, newProduct);
 
         // Fix: point at the GetById action; the anonymous object fills its {id} route value.
-           return CreatedAtAction(nameof(GetById), new { id = newProduct.Id }, newProduct); // Option A
+        return CreatedAtAction(nameof(GetById), new { id = newProduct.Id }, newProduct); // Option A
         // return CreatedAtRoute("GetProductById", new { id = newProduct.Id }, newProduct); // Option B
         // return Created($"/api/products/{newProduct.Id}", newProduct); // Option C
 
@@ -69,5 +70,41 @@ public class ProductsController : ControllerBase
     {
         var product = _db.Products.FirstOrDefault(p => p.Id == id && !p.IsDeleted);
         return product is null ? NotFound() : product;
+    }
+
+    [ProducesResponseType<Product>(StatusCodes.Status201Created)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    [HttpPost("withUnique")]
+    public async Task<ActionResult<Product>> AddProductUnique([FromBody] ProductDto product)
+    {
+
+        var isExistsProductSku =  _db.Products.AsNoTracking().Any(s => s.Sku == product.Sku && !s.IsDeleted);
+        if(isExistsProductSku)
+            return Problem(statusCode: StatusCodes.Status409Conflict,
+                          title: "Duplicate SKU",
+                          detail: $"sku is {product.Sku} exist.");
+
+            var newProduct = new Product()
+            {
+                Name = product.Name,
+                Category = product.Category,
+                Price = product.Price,
+                Sku = product.Sku,
+                Stock = product.Stock
+            };
+
+             await _db.Products.AddAsync(newProduct);
+        
+        try { 
+            await _db.SaveChangesAsync();
+        }
+            catch (DbUpdateException)   // unique index violated by a concurrent request
+            {
+                  return Problem(statusCode: StatusCodes.Status409Conflict,
+                          title: "Duplicate SKU ",
+                          detail: $"sku is {product.Sku} exist.");
+            }        
+
+        return CreatedAtAction(nameof(GetById), new { id = newProduct.Id }, newProduct);
     }
 }

@@ -9,7 +9,7 @@
         [MaxLength(100)]
         public string Name { get; set; } = "";
 
-        [Required, RegularExpression(@"^[A-Z]{3}-\d{3}$")]
+        [Required, RegularExpression(@"^[A-Za-z]{3}-\d{3}$")]
         public string Sku { get; set; } = "";       // unique in the database (POST-3)
 
         [Required]

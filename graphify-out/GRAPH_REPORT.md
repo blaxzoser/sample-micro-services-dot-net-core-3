@@ -1,17 +1,17 @@
 # Graph Report - sample-micro-services-dot-net-core-3  (2026-11-16)
 
 ## Corpus Check
-- 143 files · ~38,353 words
+- 143 files · ~38,802 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 9 file(s) not represented in the graph (top: .http 7, (none) 2)
 
 ## Summary
-- 951 nodes · 1793 edges · 78 communities (53 shown, 25 thin omitted)
-- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 137 edges (avg confidence: 0.86)
+- 958 nodes · 1824 edges · 72 communities (46 shown, 26 thin omitted)
+- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 138 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `c2298276`
+- Built from commit: `6236d879`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -23,7 +23,7 @@
 - Syslog Logging Provider
 - http
 - Launch Settings
-- Initialize
+- 20210224222723_Initialize.Designer.cs
 - Products.Api.Tests
 - Api & Logging Packages
 - Paging & Collection Packages
@@ -43,7 +43,7 @@
 - ControllerBase
 - ProductInStockUpdateCommnand
 - Feedback.Api.Tests
-- ApplicationDbContext
+- Task
 - .Create
 - WeatherForecast
 - Feedback.Api
@@ -58,32 +58,26 @@
 - .AddProduct
 - CLAUDE.md
 - ProductInStockUpdateItem
-- WeatherForecast
-- WeatherForecast
+- HttpGet
+- MemoryProductsController.cs
 - ProductDto
-- WeatherForecast
-- ProductController
+- InMemoryProductStore
 - Feedback.Api.DTO
-- WeatherForecast
 - Orders.Api
 - Payments.api
 - Reports.api
 - Users.api
 - .ReadJsonAsync
 - .Json
-- Fact
+- .PutLaptopAsync
 - Post7_InMemoryNextIdLockTests
 - FeedbackApiFactory
 - Product
 - Delete5_ApiKeyProtectedDeleteTests
-- ApplicationDbContext
 - Patch5_ConcurrentStockTests
-- AppDbContext
-- .SendAsync
 - Patch4_JsonPatchTests
 - Put1_ReplaceProductTests
 - .ConfigureServices
-- ModelBuilder
 - .GetPagedAsync
 
 ## God Nodes (most connected - your core abstractions)
@@ -99,16 +93,16 @@
 10. `ProductDto` - 13 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Misspelled names` --references--> `IProductInStockQueryService`  [INFERRED]
-  CLAUDE.md → src/Services/Catalog/Catalog.Service.Queries/IProductInStockQueryService.cs
-- `Misspelled names` --references--> `IProductQueryService`  [INFERRED]
-  CLAUDE.md → src/Services/Catalog/Catalog.Service.Queries/IProductQueryService.cs
+- `Misspelled names` --references--> `ProducInStockAction`  [INFERRED]
+  CLAUDE.md → src/Services/Catalog/Catalog.Common/Enums.cs
 - `Misspelled names` --references--> `ProductInStockUpdateCommnand`  [INFERRED]
   CLAUDE.md → src/Services/Catalog/Catalog.Services.EventHandlers/Commands/ProductInStockUpdateCommnand.cs
 - `Known issues` --references--> `ProductInStockUpdateStockEventHandler`  [INFERRED]
   CLAUDE.md → src/Services/Catalog/Catalog.Services.EventHandlers/ProductInStockUpdateStockEventHandler.cs
-- `Misspelled names` --references--> `ProducInStockAction`  [INFERRED]
-  CLAUDE.md → src/Services/Catalog/Catalog.Common/Enums.cs
+- `Misspelled names` --references--> `IProductInStockQueryService`  [INFERRED]
+  CLAUDE.md → src/Services/Catalog/Catalog.Service.Queries/IProductInStockQueryService.cs
+- `Misspelled names` --references--> `IProductQueryService`  [INFERRED]
+  CLAUDE.md → src/Services/Catalog/Catalog.Service.Queries/IProductQueryService.cs
 
 ## Import Cycles
 - None detected.
@@ -118,11 +112,11 @@
 - **409 Conflict business-state exercises** — doc_aspnet_mock_interview_exercises_post_3_duplicate_sku, doc_aspnet_mock_interview_exercises_post_4_pay_order, doc_aspnet_mock_interview_exercises_patch_3_state_machine, doc_aspnet_mock_interview_exercises_patch_5_concurrent_stock, doc_aspnet_mock_interview_exercises_delete_3_block_dependents [EXTRACTED 1.00]
 - **Exercises requiring atomic check-then-write on the shared Db** — doc_aspnet_mock_interview_exercises_starter_kit_db, doc_aspnet_mock_interview_exercises_post_3_duplicate_sku, doc_aspnet_mock_interview_exercises_put_5_optimistic_concurrency, doc_aspnet_mock_interview_exercises_patch_5_concurrent_stock [INFERRED 0.85]
 
-## Communities (78 total, 25 thin omitted)
+## Communities (72 total, 26 thin omitted)
 
 ### Community 0 - "Catalog Service Namespaces"
 Cohesion: 0.07
-Nodes (18): Common.Logging, Products.Api.Data, Catalog.Service.Queries, Catalog.Persistence.Database.Migrations, Catalog.Persistence.Database, Catalog.Api.Controllers, Catalog.Service.Queries.DTOs, Catalog.Persistence.Database.Configuration (+10 more)
+Nodes (18): Common.Logging, Products.Api.Data, Catalog.Service.Queries, Catalog.Persistence.Database, Catalog.Api.Controllers, Catalog.Service.Queries.DTOs, Catalog.Persistence.Database.Configuration, Catalog.Services.EventHandlers.Commands (+10 more)
 
 ### Community 1 - "Controller Cheat Sheet Concepts"
 Cohesion: 0.05
@@ -133,8 +127,8 @@ Cohesion: 0.19
 Nodes (10): ProductInStockDto, ProductId, ProductInStockId, Stock, DataCollection, HasItem, Items, Page (+2 more)
 
 ### Community 4 - "Syslog Logging Provider"
-Cohesion: 0.06
-Nodes (17): NoopDisposable, SyslogLogger, SyslogLoggerExtensions, SyslogLoggerProvider, SyslogLogLevel, Alert, Critical, Debug (+9 more)
+Cohesion: 0.08
+Nodes (15): SyslogLogger, SyslogLoggerExtensions, SyslogLoggerProvider, SyslogLogLevel, Alert, Critical, Debug, Emergency (+7 more)
 
 ### Community 5 - "http"
 Cohesion: 0.13
@@ -144,9 +138,9 @@ Nodes (15): ASPNETCORE_ENVIRONMENT, applicationUrl, commandName, dotnetRunMessag
 Cohesion: 0.10
 Nodes (20): applicationUrl, commandName, environmentVariables, launchBrowser, launchUrl, ASPNETCORE_ENVIRONMENT, commandName, environmentVariables (+12 more)
 
-### Community 9 - "Products.Api.Tests"
-Cohesion: 0.14
-Nodes (3): Products.Api.Tests, Feedback.Api.Tests, DtoMapperExtension
+### Community 8 - "20210224222723_Initialize.Designer.cs"
+Cohesion: 0.16
+Nodes (3): Catalog.Persistence.Database.Migrations, Initialize, ApplicationDbContextModelSnapshot
 
 ### Community 10 - "Api & Logging Packages"
 Cohesion: 0.20
@@ -176,10 +170,6 @@ Nodes (4): Conditional GET with ETag (304), Optimistic Concurrency (412 / 409, I
 Cohesion: 0.17
 Nodes (10): Customer.Api.DTO, CustomerByAgeDto, Age, CustomerName, TotalPayments, OrderSummaryDto, Age, CustomerName (+2 more)
 
-### Community 19 - ".GetByAge"
-Cohesion: 0.16
-Nodes (5): CustomersController, TodosController, Todo, InMemoryProductStore, Products
-
 ### Community 20 - "http"
 Cohesion: 0.18
 Nodes (10): ASPNETCORE_ENVIRONMENT, applicationUrl, commandName, dotnetRunMessages, environmentVariables, launchBrowser, launchUrl, profiles (+2 more)
@@ -197,32 +187,28 @@ Cohesion: 0.13
 Nodes (15): ASPNETCORE_ENVIRONMENT, applicationUrl, commandName, dotnetRunMessages, environmentVariables, launchBrowser, applicationUrl, commandName (+7 more)
 
 ### Community 24 - "AppDbContext"
-Cohesion: 0.20
-Nodes (9): Customer.Api.Data, AppDbContext, CartItems, Customers, Orders, Payments, Products, Settings (+1 more)
+Cohesion: 0.07
+Nodes (28): Customer.Api.Data, Product, Description, Name, Price, ProductId, Stock, ProductInStock (+20 more)
 
 ### Community 25 - "ControllerBase"
-Cohesion: 0.20
-Nodes (5): Products.Api.Controllers, Orders.Api.Controllers, WeatherForecastController, MemoryProductsController, WeatherForecastController
+Cohesion: 0.11
+Nodes (12): Users.api.Controllers, Reports.api.Controllers, Orders.Api.Controllers, Payments.api.Controllers, DefaultController, ProductController, ProductInStockController, WeatherForecastController (+4 more)
 
 ### Community 26 - "ProductInStockUpdateCommnand"
-Cohesion: 0.21
+Cohesion: 0.16
 Nodes (8): ProductCreateCommand, Description, Name, Price, ProductInStockUpdateCommnand, Items, ProductCreateEventHandler, ProductInStockUpdateStockEventHandler
 
 ### Community 27 - "Feedback.Api.Tests"
 Cohesion: 0.18
 Nodes (9): Microsoft.EntityFrameworkCore.InMemory (9.0.23), Feedback.Api.Tests, net9.0, coverlet.collector (6.0.2), Microsoft.AspNetCore.Mvc.Testing (9.0.22), Microsoft.NET.Test.Sdk (17.12.0), xunit (2.9.2), xunit.runner.visualstudio (2.8.2) (+1 more)
 
-### Community 28 - "ApplicationDbContext"
-Cohesion: 0.15
-Nodes (12): Product, Description, Name, Price, ProductId, Stock, ProductInStock, ProductId (+4 more)
-
 ### Community 29 - ".Create"
-Cohesion: 0.15
-Nodes (7): Feedback.Api.Controllers, FeedbackController, FeedbackEntry, Id, Message, Rating, ReceivedAt
+Cohesion: 0.14
+Nodes (8): Feedback.Api.Controllers, Feedback.Api.Models, FeedbackController, FeedbackEntry, Id, Message, Rating, ReceivedAt
 
 ### Community 30 - "WeatherForecast"
-Cohesion: 0.17
-Nodes (8): Reports.api, Reports.api.Controllers, WeatherForecastController, WeatherForecast, Date, Summary, TemperatureC, TemperatureF
+Cohesion: 0.05
+Nodes (30): Products.Api, Orders.Api, Reports.api, Payments.api, Users.api, WeatherForecast, Date, Summary (+22 more)
 
 ### Community 31 - "Feedback.Api"
 Cohesion: 0.33
@@ -257,40 +243,28 @@ Cohesion: 0.13
 Nodes (15): ASPNETCORE_ENVIRONMENT, applicationUrl, commandName, dotnetRunMessages, environmentVariables, launchBrowser, applicationUrl, commandName (+7 more)
 
 ### Community 40 - ".AddProduct"
-Cohesion: 0.15
-Nodes (9): Products.Api.Dtos, ProductsController, ProductDto, Category, Id, Name, Price, Sku (+1 more)
+Cohesion: 0.19
+Nodes (8): ProductsController, ProductDto, Category, Id, Name, Price, Sku, Stock
 
 ### Community 41 - "CLAUDE.md"
-Cohesion: 0.17
-Nodes (10): Adding a feature, Architecture, Commands, Configuration, Conventions, Docs, graphify, Known issues (+2 more)
+Cohesion: 0.25
+Nodes (6): Architecture, Commands, Configuration, Docs, graphify, Project
 
 ### Community 42 - "ProductInStockUpdateItem"
-Cohesion: 0.18
-Nodes (10): Misspelled names, Catalog.Common, Enums, ProducInStockAction, Add, Substract, ProductInStockUpdateItem, Action (+2 more)
+Cohesion: 0.20
+Nodes (9): Catalog.Common, Enums, ProducInStockAction, Add, Substract, ProductInStockUpdateItem, Action, ProductId (+1 more)
 
-### Community 43 - "WeatherForecast"
-Cohesion: 0.25
-Nodes (6): Orders.Api, WeatherForecast, Date, Summary, TemperatureC, TemperatureF
-
-### Community 44 - "WeatherForecast"
-Cohesion: 0.18
-Nodes (8): Users.api.Controllers, Users.api, WeatherForecastController, WeatherForecast, Date, Summary, TemperatureC, TemperatureF
+### Community 43 - "HttpGet"
+Cohesion: 0.29
+Nodes (3): TodosController, Todo, MemoryProductsController
 
 ### Community 45 - "ProductDto"
-Cohesion: 0.28
-Nodes (6): ProductDto, Description, Name, Price, ProductId, Stock
-
-### Community 46 - "WeatherForecast"
-Cohesion: 0.18
-Nodes (8): Payments.api, Payments.api.Controllers, WeatherForecastController, WeatherForecast, Date, Summary, TemperatureC, TemperatureF
+Cohesion: 0.24
+Nodes (7): Known issues, ProductDto, Description, Name, Price, ProductId, Stock
 
 ### Community 48 - "Feedback.Api.DTO"
 Cohesion: 0.29
 Nodes (5): Feedback.Api.DTO, FeedbackRequest, Message, Rating, FeedbackResponse
-
-### Community 49 - "WeatherForecast"
-Cohesion: 0.29
-Nodes (6): Products.Api, WeatherForecast, Date, Summary, TemperatureC, TemperatureF
 
 ### Community 50 - "Orders.Api"
 Cohesion: 0.50
@@ -309,48 +283,40 @@ Cohesion: 0.50
 Nodes (4): net9.0, Microsoft.AspNetCore.OpenApi (9.0.22), Microsoft.NET.Sdk.Web, Users.api
 
 ### Community 54 - ".ReadJsonAsync"
-Cohesion: 0.13
-Nodes (6): Get1_ProductByIdTests, Get2_FilterByCategoryTests, Get3_PaginationTests, ProductsApiFactory, ProductsApiTest, Put4_UpdatePriceTests
-
-### Community 64 - "Fact"
-Cohesion: 0.19
-Nodes (3): Delete1_DeleteProductTests, Delete4_SoftDeleteTests, Put5_OptimisticConcurrencyTests
+Cohesion: 0.11
+Nodes (6): Get1_ProductByIdTests, Get2_FilterByCategoryTests, Get3_PaginationTests, Get5_ConditionalGetETagTests, ProductsApiFactory, ProductsApiTest
 
 ### Community 66 - "FeedbackApiFactory"
 Cohesion: 0.15
 Nodes (4): Program, FeedbackApiFactory, Program, MemoryApiFactory
 
 ### Community 67 - "Product"
-Cohesion: 0.20
+Cohesion: 0.18
 Nodes (9): Product, Category, Id, IsDeleted, Name, Price, Sku, Stock (+1 more)
 
-### Community 69 - "ApplicationDbContext"
-Cohesion: 0.28
-Nodes (5): ApplicationDbContext, Products, Stocks, AppDbContext, Feedbacks
-
 ### Community 75 - ".ConfigureServices"
-Cohesion: 0.47
-Nodes (4): IProductInStockQueryService, IProductQueryService, ProductInStockQueryService, ProductQueryService
+Cohesion: 0.29
+Nodes (8): Adding a feature, Conventions, Misspelled names, Style, IProductInStockQueryService, IProductQueryService, ProductInStockQueryService, ProductQueryService
 
 ## Knowledge Gaps
 - **218 isolated node(s):** `netcoreapp3.1`, `Microsoft.Extensions.Logging (5.0.0)`, `Microsoft.NET.Sdk`, `Emergency`, `Alert` (+213 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 371 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **25 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 370 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **26 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Customer.Api.Models` connect `Customer.Api.Models` to `Catalog Service Namespaces`, `Entities.cs`?**
-  _High betweenness centrality (0.037) - this node is a cross-community bridge._
+  _High betweenness centrality (0.036) - this node is a cross-community bridge._
 - **What connects `netcoreapp3.1`, `Microsoft.Extensions.Logging (5.0.0)`, `Microsoft.NET.Sdk` to the rest of the system?**
   _218 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Catalog Service Namespaces` be split into smaller, more focused modules?**
-  _Cohesion score 0.0653417645287564 - nodes in this community are weakly interconnected._
-- **Why does `ProductsApiFactory` connect `.ReadJsonAsync` to `Fact`, `Catalog Service Namespaces`, `FeedbackApiFactory`, `Delete5_ApiKeyProtectedDeleteTests`, `Patch5_ConcurrentStockTests`, `AppDbContext`, `.SendAsync`, `Patch4_JsonPatchTests`, `Put1_ReplaceProductTests`, `.Json`?**
-  _High betweenness centrality (0.032) - this node is a cross-community bridge._
+  _Cohesion score 0.06826506826506827 - nodes in this community are weakly interconnected._
+- **Why does `ProductsApiFactory` connect `.ReadJsonAsync` to `Catalog Service Namespaces`, `.PutLaptopAsync`, `FeedbackApiFactory`, `Task`, `Delete5_ApiKeyProtectedDeleteTests`, `Product`, `Patch5_ConcurrentStockTests`, `Patch4_JsonPatchTests`, `Put1_ReplaceProductTests`, `AppDbContext`, `Task`, `.Json`?**
+  _High betweenness centrality (0.029) - this node is a cross-community bridge._
 - **Should `Controller Cheat Sheet Concepts` be split into smaller, more focused modules?**
   _Cohesion score 0.0531986531986532 - nodes in this community are weakly interconnected._
-- **Why does `ApplicationDbContext` connect `ApplicationDbContext` to `Catalog Service Namespaces`, `.ConfigureServices`, `ModelBuilder`, `ProductInStockUpdateCommnand`, `ApplicationDbContext`?**
-  _High betweenness centrality (0.021) - this node is a cross-community bridge._
+- **Why does `ApplicationDbContext` connect `AppDbContext` to `Catalog Service Namespaces`, `ProductInStockUpdateCommnand`, `.ConfigureServices`?**
+  _High betweenness centrality (0.020) - this node is a cross-community bridge._
 - **Should `Syslog Logging Provider` be split into smaller, more focused modules?**
-  _Cohesion score 0.06387921022067364 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0761904761904762 - nodes in this community are weakly interconnected._

@@ -270,10 +270,10 @@
     "semantic_hash": "2d904e200fb31be94e8446ea0a049957"
   },
   "README.md": {
-    "mtime": 1794109176.0832236,
-    "seen": 1794109504.1229358,
-    "ast_hash": "3d7a62c9e3380e22cf794b58ff04bfbe",
-    "semantic_hash": "3d7a62c9e3380e22cf794b58ff04bfbe"
+    "mtime": 1794862283.9292502,
+    "seen": 1794893851.5647511,
+    "ast_hash": "1afe77a1999a4a075052841b53b3c23d",
+    "semantic_hash": ""
   },
   "doc/aspnet-controller-cheatsheet.md": {
     "mtime": 1794107985.419262,
@@ -474,9 +474,9 @@
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api/Controllers/ProductsController.cs": {
-    "mtime": 1794862074.8924851,
-    "seen": 1794862277.4917598,
-    "ast_hash": "42f115ab0fcc68c7d6a581c09d3e8e17",
+    "mtime": 1794891140.9048567,
+    "seen": 1794893851.5646765,
+    "ast_hash": "eed58c677e426f338c0097f72919c593",
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api/Controllers/WeatherForecastController.cs": {
@@ -702,9 +702,9 @@
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api.Tests/Post3_DuplicateSkuTests.cs": {
-    "mtime": 1794858972.0411403,
-    "seen": 1794859186.976272,
-    "ast_hash": "9a3e8d3346d7ebac380829bd4ec329ef",
+    "mtime": 1794891073.0387912,
+    "seen": 1794893851.5646567,
+    "ast_hash": "b93cca09af77aa502fbdd429d4f9a524",
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api.Tests/Products.Api.Tests.csproj": {
@@ -840,27 +840,27 @@
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api/Dtos/ProductDto.cs": {
-    "mtime": 1794860194.3874779,
-    "seen": 1794861476.3707097,
-    "ast_hash": "1e9fa9f69ba412c35cc500d2e12b0550",
+    "mtime": 1794889692.9281752,
+    "seen": 1794893851.564684,
+    "ast_hash": "0be1fe67934bb030d164717f37a09748",
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api.Tests/Post7_InMemoryNextIdLockTests.cs": {
-    "mtime": 1794862136.4599526,
-    "seen": 1794862277.4917421,
+    "mtime": 1794893412.1139476,
+    "seen": 1794893851.5646603,
     "ast_hash": "e6ffbdcf48d036330d4c7d5aa637f72f",
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api/Controllers/MemoryProductsController.cs": {
-    "mtime": 1794862212.3488934,
-    "seen": 1794862277.491758,
-    "ast_hash": "97092d2275923fb64cc8c0d1ce5f710b",
+    "mtime": 1794893832.4267647,
+    "seen": 1794893851.564675,
+    "ast_hash": "9f1dd733b3330d475c5dc5f03d19af7b",
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api/Data/InMemoryProductStore.cs": {
-    "mtime": 1794862182.1910217,
-    "seen": 1794862277.4917648,
-    "ast_hash": "a716b32244f707135b1d29372228492f",
+    "mtime": 1794893045.6240132,
+    "seen": 1794893851.564682,
+    "ast_hash": "2643bb1b4683261cd2bd37d4a13e453f",
     "semantic_hash": ""
   }
 }

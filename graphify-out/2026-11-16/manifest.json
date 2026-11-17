@@ -282,9 +282,9 @@
     "semantic_hash": "ddbbc4f51183322ebc70ce6203076284"
   },
   "doc/aspnet-mock-interview-exercises.md": {
-    "mtime": 1794511261.6406436,
-    "seen": 1794550091.8553162,
-    "ast_hash": "6ad05ea09120644869289d70c0b10286",
+    "mtime": 1794862241.0298693,
+    "seen": 1794862277.4918687,
+    "ast_hash": "da18dbc60b7c7a53df11dae893736040",
     "semantic_hash": ""
   },
   ".claude/settings.json": {
@@ -474,9 +474,9 @@
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api/Controllers/ProductsController.cs": {
-    "mtime": 1794861593.2642567,
-    "seen": 1794861614.0313885,
-    "ast_hash": "abf2cea3d05037af93823cf902f43e0c",
+    "mtime": 1794862074.8924851,
+    "seen": 1794862277.4917598,
+    "ast_hash": "42f115ab0fcc68c7d6a581c09d3e8e17",
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api/Controllers/WeatherForecastController.cs": {
@@ -516,9 +516,9 @@
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api/Program.cs": {
-    "mtime": 1794858551.1205482,
-    "seen": 1794858625.4390533,
-    "ast_hash": "4dc2cdb18bb674f0243cdec1ac7e56e9",
+    "mtime": 1794862135.7287796,
+    "seen": 1794862277.4917753,
+    "ast_hash": "5eb43bb8d3500c7f58ae58f7615f9fd5",
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api/Properties/launchSettings.json": {
@@ -843,6 +843,24 @@
     "mtime": 1794860194.3874779,
     "seen": 1794861476.3707097,
     "ast_hash": "1e9fa9f69ba412c35cc500d2e12b0550",
+    "semantic_hash": ""
+  },
+  "src/Services/Products/Products.Api.Tests/Post7_InMemoryNextIdLockTests.cs": {
+    "mtime": 1794862136.4599526,
+    "seen": 1794862277.4917421,
+    "ast_hash": "e6ffbdcf48d036330d4c7d5aa637f72f",
+    "semantic_hash": ""
+  },
+  "src/Services/Products/Products.Api/Controllers/MemoryProductsController.cs": {
+    "mtime": 1794862212.3488934,
+    "seen": 1794862277.491758,
+    "ast_hash": "97092d2275923fb64cc8c0d1ce5f710b",
+    "semantic_hash": ""
+  },
+  "src/Services/Products/Products.Api/Data/InMemoryProductStore.cs": {
+    "mtime": 1794862182.1910217,
+    "seen": 1794862277.4917648,
+    "ast_hash": "a716b32244f707135b1d29372228492f",
     "semantic_hash": ""
   }
 }
