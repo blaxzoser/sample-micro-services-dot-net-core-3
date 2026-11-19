@@ -81,4 +81,7 @@ public class MemoryProductsController : ControllerBase
         // enumerates the live list while another request is adding to it.
         lock (_store.Sync) return _store.Products.ToList();
     }
+
+
+
 }

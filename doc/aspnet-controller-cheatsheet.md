@@ -141,138 +141,6 @@ Or add `[ApiConventionType(typeof(DefaultApiConventions))]` to the controller.
 
 ---
 
-## 5. Full CRUD controller (CQRS + MediatR, the senior version)
-
-```csharp
-using MediatR;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-
-[ApiController]
-[Route("api/v1/products")]
-[Produces("application/json")]
-public class ProductsController : ControllerBase
-{
-    private readonly IMediator _mediator;
-    private readonly IProductQueryService _queries;
-    private readonly ILogger<ProductsController> _logger;
-
-    public ProductsController(IMediator mediator, IProductQueryService queries,
-                              ILogger<ProductsController> logger)
-        => (_mediator, _queries, _logger) = (mediator, queries, logger);
-
-    // GET api/v1/products?page=1&take=10
-    [HttpGet]
-    [ProducesResponseType(typeof(DataCollection<ProductDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<DataCollection<ProductDto>>> GetAll(
-        [FromQuery] int page = 1, [FromQuery] int take = 10, CancellationToken ct = default)
-    {
-        if (page < 1 || take is < 1 or > 100)          // guard (pattern syntax needs C# 9; on 3.1 use || )
-            return BadRequest("page >= 1 and 1 <= take <= 100");
-
-        return Ok(await _queries.GetAllAsyc(page, take));
-    }
-
-    // GET api/v1/products/5
-    [HttpGet("{id:int}", Name = nameof(GetById))]
-    [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ProductDto>> GetById(int id, CancellationToken ct)
-    {
-        var product = await _queries.FindAsync(id);    // FirstOrDefault, NOT Single => no exception
-        if (product is null) return NotFound();
-        return product;                                // implicit 200
-    }
-
-    // POST api/v1/products  -> 201 + Location: /api/v1/products/{newId}
-    [HttpPost]
-    [ProducesResponseType(typeof(ProductDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ProductDto>> Create([FromBody] ProductCreateCommand cmd, CancellationToken ct)
-    {
-        // With IRequest<int> + Send (instead of INotification + Publish) the handler can return the new id
-        var newId = await _mediator.Send(cmd, ct);
-        var dto = await _queries.FindAsync(newId);
-        return CreatedAtAction(nameof(GetById), new { id = newId }, dto);
-    }
-
-    // PUT api/v1/products/5  -> replace the whole product
-    [HttpPut("{id:int}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update(int id, [FromBody] ProductUpdateCommand cmd, CancellationToken ct)
-    {
-        if (id != cmd.ProductId) return BadRequest("Route id and body id don't match");
-
-        var found = await _mediator.Send(cmd, ct);     // handler returns bool
-        return found ? NoContent() : NotFound();
-    }
-
-    // PATCH api/v1/products/5   (Content-Type: application/json-patch+json)
-    [HttpPatch("{id:int}")]
-    public async Task<IActionResult> Patch(int id,
-        [FromBody] JsonPatchDocument<ProductUpdateDto> patch, CancellationToken ct)
-    {
-        var current = await _queries.FindForUpdateAsync(id);
-        if (current is null) return NotFound();
-
-        patch.ApplyTo(current, ModelState);            // pkg: Microsoft.AspNetCore.Mvc.NewtonsoftJson
-        if (!TryValidateModel(current)) return ValidationProblem(ModelState);
-
-        await _mediator.Send(new ProductUpdateCommand(id, current), ct);
-        return NoContent();
-    }
-
-    // DELETE api/v1/products/5
-    [HttpDelete("{id:int}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete(int id, CancellationToken ct)
-    {
-        var deleted = await _mediator.Send(new ProductDeleteCommand(id), ct);
-        return deleted ? NoContent() : NotFound();
-    }
-}
-```
-
-PATCH body example (RFC 6902):
-```json
-[
-  { "op": "replace", "path": "/price", "value": 99.90 },
-  { "op": "remove",  "path": "/description" }
-]
-```
-PATCH setup: `services.AddControllers().AddNewtonsoftJson();`
-
-### Command that returns a value (MediatR `IRequest<T>`)
-```csharp
-public class ProductCreateCommand : IRequest<int>       // the repo uses INotification (fire and forget)
-{
-    [Required, StringLength(100)] public string Name { get; set; }
-    public string Description { get; set; }
-    [Range(0.01, 999999)] public decimal Price { get; set; }
-}
-
-public class ProductCreateHandler : IRequestHandler<ProductCreateCommand, int>
-{
-    private readonly ApplicationDbContext _db;
-    public ProductCreateHandler(ApplicationDbContext db) => _db = db;
-
-    public async Task<int> Handle(ProductCreateCommand cmd, CancellationToken ct)
-    {
-        var entity = new Product { Name = cmd.Name, Description = cmd.Description, Price = cmd.Price };
-        await _db.AddAsync(entity, ct);
-        await _db.SaveChangesAsync(ct);
-        return entity.ProductId;
-    }
-}
-```
-> **`Publish` vs `Send`:** `Publish(INotification)` goes to **0..N** handlers with no return value; use it for domain events. `Send(IRequest<T>)` goes to **exactly 1** handler and returns `T`; use it for commands and queries. A command that creates something should be `Send`, so you get the id back for the `201`.
-
----
-
 ## 6. Non-CRUD and "action" endpoints
 
 ```csharp
@@ -473,6 +341,71 @@ public async Task<ActionResult<DataCollection<ProductDto>>> GetAll([FromQuery] P
 ```
 Return an **empty list with 200** for a search with no matches, not a 404.
 
+### Paged endpoint: the full pattern (offset paging + `X-Total-Count`)
+```csharp
+[HttpGet("paged")]
+public async Task<ActionResult<Pagination<RecordProductDto>>> GetPaged(int page = 1, int pageSize = 10)
+{
+    if (page < 1 || pageSize < 1 || pageSize > 50) return Problem(statusCode: 400);
+
+    var query = _db.Products.AsNoTracking().Where(p => !p.IsDeleted);      // IQueryable: no SQL yet
+    var total = await query.CountAsync();                                  // SQL #1: SELECT COUNT(*)
+    var items = await query.OrderBy(p => p.Id)                             // stable order BEFORE Skip/Take
+        .Skip((page - 1) * pageSize).Take(pageSize)                        // OFFSET / FETCH in the database
+        .Select(p => new RecordProductDto(p.Id, p.Name, p.Category, p.Price))
+        .ToListAsync();                                                    // SQL #2: just this page's rows
+
+    Response.Headers["X-Total-Count"] = total.ToString();                  // set on EVERY 200 path
+    return new Pagination<RecordProductDto> { Items = items, Page = page, PageSize = pageSize,
+                                              TotalCount = total, TotalPages = (int)Math.Ceiling(total / (double)pageSize) };
+}
+```
+
+**`Response.Headers["X-Total-Count"] = total.ToString();`**
+- Put the total in a header so the body stays a plain list (or alongside the body fields, as above). Clients read it without parsing the JSON.
+- Use the indexer (`Headers["X-Total-Count"] = ...`). `Headers.Add(...)` throws if the key already exists.
+- Set it on **every** success path, including the "page past the end" response with empty `items`. Forgetting one early return is a classic miss.
+- Set it before the body is written. Returning an `ActionResult` is fine, because the header is set before MVC starts writing the response.
+- A browser (JavaScript) can't read custom headers cross-origin unless the server exposes them: `policy.WithExposedHeaders("X-Total-Count")` in the CORS setup.
+- It's a custom header, so the `X-` prefix is only a convention; `Total-Count` also works. Be consistent.
+
+### LINQ and EF Core pitfalls (`Any`, loops, `Select`, async)
+
+**1. Stay `IQueryable` until the last step.** `Where`, `OrderBy`, `Skip`, `Take`, `Select` only build a query. SQL runs at a terminal call (`ToListAsync`, `CountAsync`, `AnyAsync`, `FirstOrDefaultAsync`, `foreach`).
+
+| Code | What happens |
+|---|---|
+| `_db.Products.ToList().Where(...).Skip(..).Take(..)` | Loads the **whole table**, then filters in memory. Bad at 100k rows. |
+| `_db.Products.Where(...).Skip(..).Take(..).ToListAsync()` | One SQL query with `WHERE` + `OFFSET/FETCH`. Only the page comes back. |
+
+**2. `Select` into a DTO inside the query.** `.Select(p => new Dto(p.Id, p.Name))` makes EF fetch only those columns, and nothing is tracked. It also keeps `sku`, `stock`, `version` and `isDeleted` out of the response. Write `Select` **before** `ToListAsync`, not after.
+
+**3. Async: use the EF async methods, and `await` them.**
+```csharp
+await query.CountAsync();   await query.ToListAsync();   await query.AnyAsync();   await query.FirstOrDefaultAsync();
+```
+- The sync versions (`Count()`, `ToList()`) block a request thread while the database works.
+- Never `.Result` or `.Wait()` on them.
+- `Select(async x => ...)` on an in-memory list returns `IEnumerable<Task<T>>`, not results. You must `await Task.WhenAll(...)`.
+- Don't run `Task.WhenAll` on queries that share one `DbContext`: it isn't thread-safe, so run them one after another.
+
+**4. `Any()` vs `Count()` vs a pointless branch.**
+- Existence check: `await q.AnyAsync(p => p.Sku == sku)` stops at the first match. `Count() > 0` counts every row.
+- Don't branch on `Any()` when both branches return the same thing. `return list.Any() ? Ok(list) : Ok(Enumerable.Empty<T>());` is just `return Ok(list);`. An empty list already serializes to `[]`.
+
+**5. Loops (`for` / `foreach`) with a query inside = N+1.**
+```csharp
+foreach (var id in ids) products.Add(await _db.Products.FindAsync(id));   // N queries
+var products = await _db.Products.Where(p => ids.Contains(p.Id)).ToListAsync();   // 1 query
+```
+Loop over **results you already have**, not over the database. If you need related rows, use `Include` or a projection that includes them.
+
+**6. Case-insensitive filter that translates to SQL.** `p.Category.ToLower() == category.ToLower()` translates. `string.Equals(a, b, StringComparison.OrdinalIgnoreCase)` doesn't, and EF Core throws instead of silently loading the table. (SQL Server's default collation is already case-insensitive, so it is fine there.)
+
+**7. Count + page = two SQL queries.** One for `COUNT(*)`, one for the page rows. `OrderBy` before `Skip`/`Take` is required, because SQL gives no row order without `ORDER BY` and pages could overlap. Use `.ToQueryString()` on an `IQueryable` to see the generated SQL.
+
+**8. `AsNoTracking()`** only affects change tracking (memory/CPU), not the SQL. Use it on read-only queries. With a `Select` into a DTO nothing is tracked anyway.
+
 ---
 
 ## 10. API versioning (microservices favorite)
@@ -559,6 +492,8 @@ g.MapDelete("/{id:int}", async (int id, IMediator m)
 - **Why async + CancellationToken?** It frees threads while waiting on I/O, and it lets you stop the work when the client disconnects.
 - **Middleware order?** ExceptionHandler → HSTS/HttpsRedirection → Routing → CORS → Authentication → Authorization → Endpoints.
 - **DI lifetimes?** `Transient`: a new instance every time. `Scoped`: one per request (DbContext). `Singleton`: one for the app. Never inject a Scoped service into a Singleton.
+- **Why `OrderBy` before `Skip`/`Take`, and why `CountAsync` + `ToListAsync`?** SQL has no guaranteed row order without `ORDER BY`, so pages could overlap. The total and the page rows are two different questions, so it's two SQL queries, and both run in the database (`IQueryable`), not on a loaded list.
+- **Where does `X-Total-Count` go and what can go wrong?** In a response header on every success path (including an empty page). Browsers need `WithExposedHeaders("X-Total-Count")` to read it cross-origin.
 - **Return a DTO or the entity?** Always a DTO. Returning the entity leaks the schema, creates circular references, and risks over-posting.
 
 ---

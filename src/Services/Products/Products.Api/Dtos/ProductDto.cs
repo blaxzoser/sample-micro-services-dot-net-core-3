@@ -2,7 +2,7 @@
 {
     public class ProductDto
     {
-      
+
         public int Id { get; set; }
 
         [Required]
@@ -19,6 +19,31 @@
         public decimal Price { get; set; }          // PUT-4
 
         [Range(0, int.MaxValue)]
+
         public int Stock { get; set; }
     }
+
+    public record RecordProductDto(int Id, string Name, string Category, decimal Price);
+
+
+    public class PatchUserRequest
+    {
+
+        public int Id { get; set; }
+
+        [StringLength(100, MinimumLength = 1)]
+        public string? Name { get; set; }
+
+        [MinLength(1)]
+        public string? Category { get; set; }  // GET-2
+
+        [Range(0.01, 1000000)]
+        public decimal? Price { get; set; }          // PUT-4
+
+        [Range(0, int.MaxValue)]
+
+        public int? Stock { get; set; }
+    }
+
+
 }

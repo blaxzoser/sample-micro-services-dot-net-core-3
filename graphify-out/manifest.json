@@ -276,15 +276,15 @@
     "semantic_hash": ""
   },
   "doc/aspnet-controller-cheatsheet.md": {
-    "mtime": 1794107985.419262,
-    "seen": 1794109504.1229372,
-    "ast_hash": "ddbbc4f51183322ebc70ce6203076284",
-    "semantic_hash": "ddbbc4f51183322ebc70ce6203076284"
+    "mtime": 1795046350.07716,
+    "seen": 1795050415.103722,
+    "ast_hash": "a6d70e6df3261911c87f545bae7b0b54",
+    "semantic_hash": ""
   },
   "doc/aspnet-mock-interview-exercises.md": {
-    "mtime": 1794862241.0298693,
-    "seen": 1794862277.4918687,
-    "ast_hash": "da18dbc60b7c7a53df11dae893736040",
+    "mtime": 1795050370.6893246,
+    "seen": 1795050415.1037235,
+    "ast_hash": "a7160bb6f83beb113c83f1da1bf7683f",
     "semantic_hash": ""
   },
   ".claude/settings.json": {
@@ -342,9 +342,9 @@
     "semantic_hash": ""
   },
   "doc/aspnet-controller-cheatsheet.pdf": {
-    "mtime": 1794342681.3444953,
-    "seen": 1794497509.7106051,
-    "ast_hash": "9cf324afcea4b090d6f34892840f86b4",
+    "mtime": 1795038058.0690594,
+    "seen": 1795050415.1037247,
+    "ast_hash": "9dbb765bd3591d4bae59b7c70c633f5b",
     "semantic_hash": ""
   },
   "src/Services/Customer/Customer.Api/Controllers/CustomersController.cs": {
@@ -474,9 +474,9 @@
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api/Controllers/ProductsController.cs": {
-    "mtime": 1794891140.9048567,
-    "seen": 1794893851.5646765,
-    "ast_hash": "eed58c677e426f338c0097f72919c593",
+    "mtime": 1795050385.466258,
+    "seen": 1795050415.103653,
+    "ast_hash": "28aceb8cf1c63fabdfbf4ea1d060f45e",
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api/Controllers/WeatherForecastController.cs": {
@@ -683,12 +683,6 @@
     "ast_hash": "d7eca89ab243bb9b0877ddab5d7cdac9",
     "semantic_hash": ""
   },
-  "src/Services/Products/Products.Api.Tests/Patch4_JsonPatchTests.cs": {
-    "mtime": 1794858973.896327,
-    "seen": 1794859186.9762683,
-    "ast_hash": "51d738aa31aa535010a745ffa5abf30a",
-    "semantic_hash": ""
-  },
   "src/Services/Products/Products.Api.Tests/Patch5_ConcurrentStockTests.cs": {
     "mtime": 1794858974.2453299,
     "seen": 1794859186.9762695,
@@ -720,9 +714,9 @@
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api.Tests/ProductsApiTest.cs": {
-    "mtime": 1794858833.6993263,
-    "seen": 1794859186.9762762,
-    "ast_hash": "ac37b13ee3f5e8436f27c286b9f34996",
+    "mtime": 1795050392.0013165,
+    "seen": 1795050415.1036441,
+    "ast_hash": "d9bf8d92c796e1ca74b99ddfba3a7e8d",
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api.Tests/Put1_ReplaceProductTests.cs": {
@@ -840,9 +834,9 @@
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api/Dtos/ProductDto.cs": {
-    "mtime": 1794889692.9281752,
-    "seen": 1794893851.564684,
-    "ast_hash": "0be1fe67934bb030d164717f37a09748",
+    "mtime": 1795049677.0298834,
+    "seen": 1795050415.1036599,
+    "ast_hash": "9d1b1d7236f03bf9b19b757e0a5a1fa0",
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api.Tests/Post7_InMemoryNextIdLockTests.cs": {
@@ -852,15 +846,27 @@
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api/Controllers/MemoryProductsController.cs": {
-    "mtime": 1794893832.4267647,
-    "seen": 1794893851.564675,
-    "ast_hash": "9f1dd733b3330d475c5dc5f03d19af7b",
+    "mtime": 1795033499.1535876,
+    "seen": 1795050415.1036515,
+    "ast_hash": "d2b83a5d4e12a5ff7bc68d1a95ef002d",
     "semantic_hash": ""
   },
   "src/Services/Products/Products.Api/Data/InMemoryProductStore.cs": {
     "mtime": 1794893045.6240132,
     "seen": 1794893851.564682,
     "ast_hash": "2643bb1b4683261cd2bd37d4a13e453f",
+    "semantic_hash": ""
+  },
+  "src/Services/Products/Products.Api.Tests/Patch4_PartialUpdateTests.cs": {
+    "mtime": 1795050391.8503144,
+    "seen": 1795050415.1036296,
+    "ast_hash": "1651cdfc5169cb260c799bf73dfe59f7",
+    "semantic_hash": ""
+  },
+  "src/Services/Products/Products.Api/Models/Pagination.cs": {
+    "mtime": 1795031757.012681,
+    "seen": 1795050415.1036637,
+    "ast_hash": "bf262e6f34bc785fd545662f98b734a3",
     "semantic_hash": ""
   }
 }

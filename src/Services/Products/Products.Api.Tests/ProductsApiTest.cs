@@ -1,5 +1,4 @@
 using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json;
 
 namespace Products.Api.Tests;
@@ -27,9 +26,6 @@ public abstract class ProductsApiTest : IClassFixture<ProductsApiFactory>
         => new { name, sku, category, price, stock };
 
     protected static JsonContent Json(object body) => JsonContent.Create(body);
-
-    protected static StringContent JsonPatch(string json, string contentType = "application/json-patch+json")
-        => new(json, Encoding.UTF8, contentType);
 
     protected static async Task<JsonElement> ReadJsonAsync(HttpResponseMessage response)
     {

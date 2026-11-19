@@ -45,7 +45,7 @@ Timed exercises in the style of Codility and HackerRank. **Each exercise is one 
 | PATCH-1 | Partial user update | 🟢 | 15 | 200, 400, 404 | ☐ |
 | PATCH-2 | Change order status | 🟢 | 15 | 200, 400, 404 | ☐ |
 | PATCH-3 | Status state machine | 🟡 | 20 | 200, 409 | ☐ |
-| PATCH-4 | JSON Patch document | 🟡 | 25 | 200, 400, 404, 415 | ☐ |
+| PATCH-4 | Partial product update | 🟢 | 15 | 200, 400, 404 | ☐ |
 | PATCH-5 | Concurrent stock adjust | 🔴 | 30 | 200, 400, 409 | ☐ |
 | DELETE-1 | Delete product | 🟢 | 15 | 204, 404 | ☐ |
 | DELETE-2 | Idempotent cart item delete | 🟢 | 15 | 204, 404 | ☐ |
@@ -1615,7 +1615,7 @@ public IActionResult Replace(int id, CreateProductRequest request)
 | `PATCH /api/users/1` `{"email":"bad"}` | 400 |
 | `PATCH /api/users/99` `{"name":"X"}` | 404 |
 
-**Follow-ups:** With nullable DTO properties, how do you tell "not sent" apart from "set to null"? (You can't. Use JSON Patch (PATCH-4), JSON Merge Patch, or an `Optional<T>` wrapper.) PUT vs PATCH in one sentence.
+**Follow-ups:** With nullable DTO properties, how do you tell "not sent" apart from "set to null"? (You can't. Use JSON Patch (RFC 6902), JSON Merge Patch, or an `Optional<T>` wrapper.) PUT vs PATCH in one sentence.
 
 <details>
 <summary>✅ Solution</summary>
@@ -1769,87 +1769,68 @@ public IActionResult ChangeStatus(int id, ChangeStatusRequest request)
 
 ---
 
-## PATCH-4 · JSON Patch document (RFC 6902) → 200 / 400 / 404 / 415 🟡 25 min
+## PATCH-4 · Partial product update (only the fields sent) → 200 / 400 / 404 🟢 15 min
 
-**Endpoint:** `PATCH /api/products/{id}` with `Content-Type: application/json-patch+json`
-
-**Setup**
-```bash
-dotnet add package Microsoft.AspNetCore.Mvc.NewtonsoftJson
-```
-```csharp
-// Program.cs: JsonPatchDocument needs Newtonsoft, which replaces System.Text.Json for all controllers
-builder.Services.AddControllers()
-    .AddNewtonsoftJson(o => o.SerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter()));
-```
-(.NET 10 also ships a System.Text.Json version: `Microsoft.AspNetCore.JsonPatch.SystemTextJson`.)
+**Endpoint:** `PATCH /api/products/{id}` (`Content-Type: application/json`)
 
 **Requirements**
-- Patchable fields: `name`, `category`, `price`, `stock`. The same validation rules as POST-2 apply **after** the patch.
-- Unknown path (for example `/sku` or `/id`) or an invalid operation → **400**.
-- Result is invalid after the patch (for example `price: -1`) → **400** ValidationProblem.
-- Wrong `Content-Type` → **415**. Not found → **404**.
-- Success → increment `Version` and return **200** with the product.
+- Body may contain any of `name`, `category`, `price`, `stock`. **Only the fields you send change.**
+- `sku` and `id` are **not patchable**: if they are sent, they are ignored. A body with only those fields counts as empty.
+- Empty body `{}` → **400** (`title: "No fields to update"`).
+- A sent value that breaks the POST-2 rules (`price` ≤ 0, `stock` < 0, empty `name`) → **400**, and nothing changes.
+- Not found or soft-deleted → **404**.
+- Success → increment `Version` and return **200** with the updated product.
 
 **Test cases**
-| Body (`application/json-patch+json`) | Expected |
+| Request | Expected |
 |---|---|
-| `[{"op":"replace","path":"/price","value":999}]` | 200, `price: 999` |
-| `[{"op":"replace","path":"/name","value":"Pro"},{"op":"replace","path":"/stock","value":0}]` | 200 |
-| `[{"op":"replace","path":"/sku","value":"X"}]` | 400 (path not in the model) |
-| `[{"op":"replace","path":"/price","value":-1}]` | 400 |
-| `PATCH /api/products/999` | 404 |
-| same body with `Content-Type: application/json` | 415 |
+| `PATCH /api/products/1` `{"price":999}` | 200, `price: 999`, name, category and stock unchanged, `version: 2` |
+| `PATCH /api/products/2` `{"name":"Pro","stock":0}` | 200, both changed, price unchanged |
+| `PATCH /api/products/1` `{"stock":0}` | 200, `stock: 0` (zero is a real value, not "not sent") |
+| `PATCH /api/products/1` `{}` | 400 |
+| `PATCH /api/products/1` `{"sku":"XXX-999"}` | 400 (nothing patchable was sent), SKU unchanged |
+| `PATCH /api/products/1` `{"price":-1}` | 400, nothing changed |
+| `PATCH /api/products/1` `{"name":""}` | 400 |
+| `PATCH /api/products/999` `{"price":10}` | 404 |
 
-**Follow-ups:** Why patch a dedicated model and not the entity? (So the client can't change `/id` or `/isDeleted`.) What do JSON Patch and JSON Merge Patch (RFC 7386) each look like?
+**Follow-ups:** Why are the DTO properties nullable (`decimal?`, `int?`)? (So that "not sent" is `null`, and `stock: 0` is not mistaken for "not sent".) How do you tell "not sent" apart from "set to null"? (You can't with this DTO. Use JSON Patch (RFC 6902), JSON Merge Patch (RFC 7386), or an `Optional<T>` wrapper.) Why a dedicated request class and not the `Product` entity? (So the client can't change `Id`, `Sku`, `IsDeleted` or `Version`.) PUT vs PATCH in one sentence.
 
 <details>
 <summary>✅ Solution</summary>
 
 ```csharp
-using Microsoft.AspNetCore.JsonPatch;
-
-public class ProductPatchModel
+public class PatchProductRequest
 {
-    [Required, StringLength(100)] public string Name { get; set; } = "";
-    [Required] public string Category { get; set; } = "";
-    [Range(typeof(decimal), "0.01", "1000000")] public decimal Price { get; set; }
-    [Range(0, int.MaxValue)] public int Stock { get; set; }
+    [StringLength(100, MinimumLength = 1)] public string? Name { get; set; }      // null = not sent
+    [MinLength(1)]                         public string? Category { get; set; }
+    [Range(0.01, 1000000)]                 public decimal? Price { get; set; }    // null passes validation
+    [Range(0, int.MaxValue)]               public int? Stock { get; set; }
 }
 
 [HttpPatch("{id:int}")]
-[Consumes("application/json-patch+json")]          // anything else -> 415
 [ProducesResponseType<Product>(StatusCodes.Status200OK)]
 [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
 [ProducesResponseType(StatusCodes.Status404NotFound)]
-public IActionResult Patch(int id, [FromBody] JsonPatchDocument<ProductPatchModel> patch)
+public async Task<ActionResult<Product>> Patch(int id, [FromBody] PatchProductRequest request)
 {
-    lock (_db.Sync)
-    {
-        var product = _db.Products.FirstOrDefault(p => p.Id == id && !p.IsDeleted);
-        if (product is null) return NotFound();
+    if (request.Name is null && request.Category is null && request.Price is null && request.Stock is null)
+        return Problem(statusCode: StatusCodes.Status400BadRequest, title: "No fields to update");
 
-        var model = new ProductPatchModel
-        {
-            Name = product.Name, Category = product.Category,
-            Price = product.Price, Stock = product.Stock
-        };
+    var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+    if (product is null) return NotFound();
 
-        patch.ApplyTo(model, ModelState);           // bad path or op -> ModelState error
-        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+    if (request.Name is not null)     product.Name = request.Name;
+    if (request.Category is not null) product.Category = request.Category;
+    if (request.Price is not null)    product.Price = request.Price.Value;
+    if (request.Stock is not null)    product.Stock = request.Stock.Value;
+    product.Version++;
 
-        if (!TryValidateModel(model)) return ValidationProblem(ModelState);  // DataAnnotations after the patch
-
-        product.Name = model.Name;
-        product.Category = model.Category;
-        product.Price = model.Price;
-        product.Stock = model.Stock;
-        product.Version++;
-
-        return Ok(product);
-    }
+    await _db.SaveChangesAsync();
+    return Ok(product);
 }
 ```
+
+`[ApiController]` already returns 400 for `price: -1` or `name: ""` before the action runs, because the validation attributes only check the properties that were sent.
 </details>
 
 ---
